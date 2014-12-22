@@ -107,6 +107,6 @@ plugin.load = function(app) {
       res.send(err || commands);
     });
   });
-}
+};
 
 module.exports = plugin;
