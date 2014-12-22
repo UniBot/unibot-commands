@@ -1,0 +1,27 @@
+{
+  "name": "unibot-commands",
+  "version": "1.0.0",
+  "description": "Comands plugin for unibot",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/unibot/unibot-commands.git"
+  },
+  "keywords": [
+    "unibot",
+    "irc",
+    "plugin"
+  ],
+  "author": "ProLoser",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/unibot/unibot-commands/issues"
+  },
+  "homepage": "https://github.com/unibot/unibot-commands",
+  "dependencies": {
+    "mongoose": "^3.8.21"
+  }
+}
