@@ -23,7 +23,7 @@ function cleanCommand(input) {
 
 var plugin = function(channel, config){
 
-  var commands;
+  var commands = { commands: {} };
 
   model.findOne({ channel: channel.id }, function(err, _commands_){
     if (err || !_commands_) {
