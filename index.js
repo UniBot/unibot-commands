@@ -1,5 +1,16 @@
 var mongoose   = require('mongoose');
 
+/**
+ * Creating a mongoose schema for a channel command collection record (1 record per channel)
+ * {
+ *   channel: '123-abc',
+ *   commands: {
+ *     'help': 'Let me help you!',
+ *     'hello': 'Hi there'
+ *   }
+ * }
+ * 
+ */
 var Commands = new mongoose.Schema({
   channel : {
     type  : String, // channel._id
@@ -13,9 +24,9 @@ var Commands = new mongoose.Schema({
     default: {}
   }
 });
-
 var model = mongoose.model('Commands', Commands);
 
+// lowercase and escapes characters that are invalid JSON keys
 function cleanCommand(input) {
   var out = input;
   return out.replace(/\$/g, String.fromCharCode(0xFF04)).replace(/\./g, '．').toLowerCase();
@@ -23,8 +34,8 @@ function cleanCommand(input) {
 
 var plugin = function(channel, config){
 
-  var commands = { commands: {} };
-
+  // Retrieve or create a new mongo record for this channel and store it to `commands`
+  var commands;
   model.findOne({ channel: channel.id }, function(err, _commands_){
     if (err || !_commands_) {
       commands = new model({
@@ -40,6 +51,8 @@ var plugin = function(channel, config){
     // Execute Command
     // [nick:] !command [tokens]
     "(?:(\\S+): )?(?:!(\\S+))(?: (.+))?": function(from, matches) {
+      if (!commands) return; // mongoose hasn't retrieved channel record yet
+      
       matches[2] = cleanCommand(matches[2]);
 
       if (!commands.commands[matches[2]]) return;
@@ -59,6 +72,8 @@ var plugin = function(channel, config){
     // Save Command
     // !remember [command] is [Hello :nick, this is the output :tokens]
     "^!remember (\\S+) is (.+)": function(from, matches) {
+      if (!commands) return; // mongoose hasn't retrieved channel record yet
+      
       matches[1] = cleanCommand(matches[1]);
 
       commands.commands[matches[1]] = matches[2];
@@ -75,6 +90,8 @@ var plugin = function(channel, config){
     },
     // Delete Command
     "^!forget (\\S+)": function(from, matches) {
+      if (!commands) return; // mongoose hasn't retrieved channel record yet
+      
       matches[1] = cleanCommand(matches[1]);
       if (!commands.commands[matches[1]]) return channel.say('Command Not Found: '+matches[1], from);
       delete commands.commands[matches[1]];
@@ -91,6 +108,8 @@ var plugin = function(channel, config){
     },
     // Show Raw Command
     "^!show (\\S+)": function(from, matches) {
+      if (!commands) return; // mongoose hasn't retrieved channel record yet
+      
       matches[1] = cleanCommand(matches[1]);
       if (!commands.commands[matches[1]]) return channel.say('Command Not Found: '+matches[1], from);
       channel.say(commands.commands[matches[1]], from);
@@ -98,6 +117,11 @@ var plugin = function(channel, config){
   };
 };
 
+/**
+ * Opportunity to wire in webserver routes
+ * 
+ * @param app {Connect} an instance of the connect + connect-rest webserver
+ */
 plugin.load = function(app) {
   app.get('/commands', function(req, res, next){
     res.sendFile('index.html');
