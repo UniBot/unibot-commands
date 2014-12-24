@@ -74,7 +74,7 @@ module.exports = function init(options){
     return {
       // Execute Command
       // [nick:] !command [tokens]
-      "(?:(\\S+): )?(?:!(\\S+))(?: (.+))?": function(from, matches) {
+      "(?:(\\S+)[:,] )?(?:!(\\S+))(?: (.+))?": function(from, matches) {
         if (!commands) return; // mongoose hasn't retrieved channel record yet
         
         matches[2] = cleanCommand(matches[2]);
