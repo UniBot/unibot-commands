@@ -33,7 +33,19 @@ module.exports = function init(options){
         dropDups : false
       }
     },
-    commands : {
+    tokenCommands: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    simpleCommands: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    directedCommands: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {}
+    },
+    directedTokenCommands: {
       type: mongoose.Schema.Types.Mixed,
       default: {}
     }
@@ -75,22 +87,31 @@ module.exports = function init(options){
       // Execute Command
       // [nick:] !command [tokens]
       "(?:(\\S+)[:,] )?(?:!(\\S+))(?: (.+))?": function(from, matches) {
+        var message, tokens;
+
         if (!commands) return; // mongoose hasn't retrieved channel record yet
         
         matches[2] = cleanCommand(matches[2]);
 
-        if (!commands.commands[matches[2]]) return;
+        if (matches[3] && commands.tokenCommands[matches[2]]) {
+          message = commands.tokenCommands[matches[2]];
+        } else if (commands.simpleCommands[matches[2]]) {
+          message = commands.simpleCommands[matches[2]];
+        } else {
+          return;
+        }
+
         if (matches[1]) from = matches[1];
-        var message = commands.commands[matches[2]];
-        var tokens = matches[3] || '';
+
+        tokens = matches[3] || '';
         tokens = tokens.split(' ');
         message = message.split(':tokens').join(tokens.join('+'));
         var l = tokens.length;
         while (l--) {
           message = message.split( ':token'+ (l + 1) ).join(tokens[l]);
         }
-        message
         message = message.split(':nick').join(from);
+
         channel.say(message);
       },
       // Save Command
@@ -100,8 +121,14 @@ module.exports = function init(options){
         
         matches[1] = cleanCommand(matches[1]);
 
-        commands.commands[matches[1]] = matches[2];
-        commands.markModified('commands');
+        if (matches[2].split(':token').length > 1) {
+          commands.tokenCommands[matches[1]] = matches[2];
+          commands.markModified('tokenCommands');
+        } else {
+          commands.simpleCommands[matches[1]] = matches[2];
+          commands.markModified('simpleCommands');
+        }
+
         commands.save(function(err){
           if (err) {
             channel.say('Error saving "'+matches[1]+'": '+err, from);
@@ -117,9 +144,20 @@ module.exports = function init(options){
         if (!commands) return; // mongoose hasn't retrieved channel record yet
         
         matches[1] = cleanCommand(matches[1]);
-        if (!commands.commands[matches[1]]) return channel.say('Command Not Found: '+matches[1], from);
-        delete commands.commands[matches[1]];
-        commands.markModified('commands');
+
+
+        if (commands.simpleCommands[matches[1]]) {
+          delete commands.simpleCommands[matches[1]];
+          commands.markModified('simpleCommands');
+        }
+        if (commands.tokenCommands[matches[1]]) {
+          delete commands.tokenCommands[matches[1]];
+          commands.markModified('tokenCommands');
+        }
+        if (!commands.simpleCommands[matches[1]] && !commands.tokenCommands[matches[1]]) {
+          return channel.say('Command Not Found: '+matches[1], from);
+        }
+
         commands.save(function(err){
           if (err) {
             channel.say('Error removing "'+matches[1]+'": '+err, from);
@@ -135,8 +173,15 @@ module.exports = function init(options){
         if (!commands) return; // mongoose hasn't retrieved channel record yet
         
         matches[1] = cleanCommand(matches[1]);
-        if (!commands.commands[matches[1]]) return channel.say('Command Not Found: '+matches[1], from);
-        channel.say(commands.commands[matches[1]], from);
+
+        if (commands.simpleCommands[matches[1]])
+          channel.say(commands.simpleCommands[matches[1]], from);
+        
+        if (commands.tokenCommands[matches[1]])
+          channel.say(commands.tokenCommands[matches[1]], from);
+        
+        if (!commands.simpleCommands[matches[1]] && !commands.tokenCommands[matches[1]])
+          channel.say('Command Not Found: '+matches[1], from);
       }
     };
   };
