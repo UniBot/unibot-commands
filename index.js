@@ -41,7 +41,7 @@ module.exports = function init(options){
   var model = mongoose.model('Commands', Commands);
 
   webserver.get('/commands', function(req, res, next){
-    res.sendFile('index.html');
+    res.sendFile('./index.html');
   });
 
   webserver.get('/commands/:channel', function(req, res, next) {
@@ -56,7 +56,7 @@ module.exports = function init(options){
     return out.replace(/\$/g, String.fromCharCode(0xFF04)).replace(/\./g, '．').toLowerCase();
   }
 
-  function plugin(channel){
+  return function plugin(channel){
 
     // Retrieve or create a new mongo record for this channel and store it to `commands`
     var commands;
