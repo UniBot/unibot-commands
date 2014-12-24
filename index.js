@@ -41,7 +41,7 @@ module.exports = function init(options){
   var model = mongoose.model('Commands', Commands);
 
   webserver.get('/commands', function(req, res, next){
-    res.sendFile('./index.html');
+    res.sendFile(__dirname + '/index.html');
   });
 
   webserver.get('/commands/:channel', function(req, res, next) {
